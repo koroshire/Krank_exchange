@@ -1,0 +1,5 @@
+aiogram==3.17.0
+python-dotenv==1.0.0
+aiohttp==3.11.11
+pybit==5.14.0
+base58==2.1.1
