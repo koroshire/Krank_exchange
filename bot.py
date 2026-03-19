@@ -62,7 +62,7 @@ logger.info(f"✅ ID админов: {ADMIN_IDS}")
 class Config:
     MIN_SUM_RUB = 500
     MAX_SUM_RUB = 1_000_000
-    BUY_MARKUP = 16
+    BUY_MARKUP = 21
     SELL_MARKUP = 15
     PRICE_UPDATE_INTERVAL = 60
     MAX_ORDERS = 1000
@@ -514,14 +514,21 @@ async def notify_admin_new_order(order_id: int, order_data: Dict):
     action = "ПОКУПКА" if operation == 'buy' else "ПРОДАЖА"
     payment_details = order_data.get('payment_details', '')
     
+    # Функция для безопасного экранирования HTML
+    def h(text):
+        if text is None:
+            return ""
+        # Заменяем специальные HTML-символы
+        return str(text).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+    
     text = (
-        f"🎫 **НОВАЯ ЗАЯВКА #{order_id}**\n\n"
-        f"{emoji} **{action} {config.CRYPTO_SYMBOLS[crypto]} {crypto}**\n\n"
-        f"👤 **Клиент:** {user_name}\n"
-        f"📱 **Username:** @{username}\n"
-        f"🆔 **ID:** {user_id}\n"
-        f"⏱ **Время:** {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
-        f"💰 **ДЕТАЛИ СДЕЛКИ:**\n"
+        f"<b>🎫 НОВАЯ ЗАЯВКА #{order_id}</b>\n\n"
+        f"{emoji} <b>{action} {config.CRYPTO_SYMBOLS[crypto]} {crypto}</b>\n\n"
+        f"👤 <b>Клиент:</b> {h(user_name)}\n"
+        f"📱 <b>Username:</b> @{h(username)}\n"
+        f"🆔 <b>ID:</b> {user_id}\n"
+        f"⏱ <b>Время:</b> {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
+        f"💰 <b>ДЕТАЛИ СДЕЛКИ:</b>\n"
     )
     
     if operation == 'buy':
@@ -534,14 +541,15 @@ async def notify_admin_new_order(order_id: int, order_data: Dict):
             network_match = re.search(r'Сеть: ([^\n]+)', payment_details)
             if network_match:
                 network_type = network_match.group(1)
+        
         text += (
-            f"💸 **Платит:** {rub:,.2f} RUB\n"
-            f"💎 **Получает:** {format_amount(amount, crypto)} {crypto}\n"
-            f"⛽ **Комиссия сети:** {format_amount(fee, crypto)} {crypto}\n"
-            f"💱 **Курс:** {order_data['price']:,.2f} RUB\n\n"
-            f"💳 **КОШЕЛЕК:**\n"
-            f"• Адрес: `{wallet_address}`\n"
-            f"• Сеть: {network_type}\n"
+            f"💸 <b>Платит:</b> {rub:,.2f} RUB\n"
+            f"💎 <b>Получает:</b> {format_amount(amount, crypto)} {crypto}\n"
+            f"⛽ <b>Комиссия сети:</b> {format_amount(fee, crypto)} {crypto}\n"
+            f"💱 <b>Курс:</b> {order_data['price']:,.2f} RUB\n\n"
+            f"💳 <b>КОШЕЛЕК:</b>\n"
+            f"• Адрес: <code>{h(wallet_address)}</code>\n"
+            f"• Сеть: {h(network_type)}\n"
         )
     else:
         bank_name = order_data.get('payment_method', 'не указан')
@@ -554,15 +562,16 @@ async def notify_admin_new_order(order_id: int, order_data: Dict):
             phone_match = re.search(r'Телефон: ([\d\s\+\(\)\-]+)', payment_details)
             if phone_match:
                 phone_display = phone_match.group(1)
+        
         text += (
-            f"💰 **Продает:** {format_amount(amount, crypto)} {crypto}\n"
-            f"💸 **Получает:** {rub:,.2f} RUB\n"
-            f"⛽ **Комиссия сети:** {format_amount(fee, crypto)} {crypto}\n"
-            f"💱 **Курс:** {order_data['price']:,.2f} RUB\n\n"
-            f"🏦 **РЕКВИЗИТЫ:**\n"
-            f"• Банк: {bank_name}\n"
-            f"• Карта: `{card_display}`\n"
-            f"• Телефон: `{phone_display}`\n"
+            f"💰 <b>Продает:</b> {format_amount(amount, crypto)} {crypto}\n"
+            f"💸 <b>Получает:</b> {rub:,.2f} RUB\n"
+            f"⛽ <b>Комиссия сети:</b> {format_amount(fee, crypto)} {crypto}\n"
+            f"💱 <b>Курс:</b> {order_data['price']:,.2f} RUB\n\n"
+            f"🏦 <b>РЕКВИЗИТЫ:</b>\n"
+            f"• Банк: {h(bank_name)}\n"
+            f"• Карта: <code>{h(card_display)}</code>\n"
+            f"• Телефон: <code>{h(phone_display)}</code>\n"
         )
     
     keyboard = InlineKeyboardMarkup(
@@ -576,7 +585,7 @@ async def notify_admin_new_order(order_id: int, order_data: Dict):
     # Отправляем ВСЕМ админам
     for admin_id in ADMIN_IDS:
         try:
-            await bot.send_message(admin_id, text, reply_markup=keyboard, parse_mode="Markdown")
+            await bot.send_message(admin_id, text, reply_markup=keyboard, parse_mode="HTML")
             logger.info(f"📤 Уведомление о заявке #{order_id} отправлено админу {admin_id}")
         except Exception as e:
             logger.error(f"❌ Ошибка отправки админу {admin_id}: {e}")
@@ -589,6 +598,12 @@ async def send_order_details_to_user(order_id: int, user_id: int):
         logger.error(f"❌ Заявка #{order_id} не найдена")
         return
     
+    # Функция для безопасного экранирования HTML
+    def h(text):
+        if text is None:
+            return ""
+        return str(text).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+    
     if order.operation == 'buy':
         wallet_address = "не указан"
         network = "неизвестно"
@@ -599,14 +614,15 @@ async def send_order_details_to_user(order_id: int, user_id: int):
             net_match = re.search(r'Сеть: ([^\n]+)', order.payment_details)
             if net_match:
                 network = net_match.group(1)
+        
         text = (
-            f"✅ **Заявка #{order_id} принята!**\n\n"
-            f"📊 **Детали:**\n"
+            f"<b>✅ Заявка #{order_id} принята!</b>\n\n"
+            f"📊 <b>Детали:</b>\n"
             f"💸 Вы платите: {order.rub_amount:,.2f} RUB\n"
             f"💎 Вы получите: {format_amount(order.amount, order.crypto)} {order.crypto}\n"
             f"⛽ Комиссия: {format_amount(order.fee, order.crypto)} {order.crypto}\n"
-            f"💳 Адрес: `{wallet_address}`\n"
-            f"🌐 Сеть: {network}\n"
+            f"💳 Адрес: <code>{h(wallet_address)}</code>\n"
+            f"🌐 Сеть: {h(network)}\n"
             f"💱 Курс: {order.price:,.2f} RUB\n\n"
             f"👨‍💼 Оператор скоро свяжется с вами!"
         )
@@ -621,21 +637,22 @@ async def send_order_details_to_user(order_id: int, user_id: int):
             phone_match = re.search(r'Телефон: ([\d\s\+\(\)\-]+)', order.payment_details)
             if phone_match:
                 phone_display = phone_match.group(1)
+        
         text = (
-            f"✅ **Заявка #{order_id} принята!**\n\n"
-            f"📊 **Детали:**\n"
+            f"<b>✅ Заявка #{order_id} принята!</b>\n\n"
+            f"📊 <b>Детали:</b>\n"
             f"💰 Вы продаете: {format_amount(order.amount, order.crypto)} {order.crypto}\n"
             f"💸 Вы получите: {order.rub_amount:,.2f} RUB\n"
             f"⛽ Комиссия: {format_amount(order.fee, order.crypto)} {order.crypto}\n"
-            f"🏦 Банк: {bank_name}\n"
-            f"💳 Карта: `{card_display}`\n"
-            f"📱 Телефон: `{phone_display}`\n"
+            f"🏦 Банк: {h(bank_name)}\n"
+            f"💳 Карта: <code>{h(card_display)}</code>\n"
+            f"📱 Телефон: <code>{h(phone_display)}</code>\n"
             f"💱 Курс: {order.price:,.2f} RUB\n\n"
             f"👨‍💼 Оператор скоро свяжется с вами!"
         )
     
     try:
-        await bot.send_message(user_id, text, parse_mode="Markdown")
+        await bot.send_message(user_id, text, parse_mode="HTML")
         logger.info(f"✅ Детали заявки #{order_id} отправлены")
     except Exception as e:
         logger.error(f"❌ Ошибка отправки: {e}")
@@ -761,13 +778,69 @@ async def admin_show_all_orders(message: types.Message):
     if not new_orders:
         await message.answer("📭 Нет новых заявок")
         return
+    
     for order in sorted(new_orders, key=lambda x: x.created_at, reverse=True)[:15]:
-        text = f"🆕 Заявка #{order.order_id}\nТип: {'🟢 ПОКУПКА' if order.operation == 'buy' else '🔴 ПРОДАЖА'}\n👤 {order.user_name}\n💰 {order.rub_amount:,.2f} RUB ➔ {format_amount(order.amount, order.crypto)} {order.crypto}"
+        # Формируем ПОЛНУЮ информацию как в notify_admin_new_order
+        emoji = "🟢" if order.operation == 'buy' else "🔴"
+        action = "ПОКУПКА" if order.operation == 'buy' else "ПРОДАЖА"
+        
+        text = (
+            f"🆕 **ЗАЯВКА #{order.order_id}**\n\n"
+            f"{emoji} **{action} {config.CRYPTO_SYMBOLS[order.crypto]} {order.crypto}**\n\n"
+            f"👤 **Клиент:** {order.user_name}\n"
+            f"📱 **Username:** @{order.username if order.username else 'нет'}\n"
+            f"🆔 **ID:** {order.user_id}\n"
+            f"⏱ **Время:** {order.created_at.strftime('%d.%m.%Y %H:%M')}\n\n"
+            f"💰 **ДЕТАЛИ СДЕЛКИ:**\n"
+        )
+        
+        if order.operation == 'buy':
+            wallet_address = "не указан"
+            network_type = "неизвестно"
+            if order.payment_details:
+                address_match = re.search(r'Адрес: (\S+)', order.payment_details)
+                if address_match:
+                    wallet_address = address_match.group(1)
+                network_match = re.search(r'Сеть: ([^\n]+)', order.payment_details)
+                if network_match:
+                    network_type = network_match.group(1)
+            text += (
+                f"💸 **Платит:** {order.rub_amount:,.2f} RUB\n"
+                f"💎 **Получает:** {format_amount(order.amount, order.crypto)} {order.crypto}\n"
+                f"⛽ **Комиссия сети:** {format_amount(order.fee, order.crypto)} {order.crypto}\n"
+                f"💱 **Курс:** {order.price:,.2f} RUB\n\n"
+                f"💳 **КОШЕЛЕК:**\n"
+                f"• Адрес: `{wallet_address}`\n"
+                f"• Сеть: {network_type}\n"
+            )
+        else:
+            bank_name = order.payment_method or "не указан"
+            card_display = "не указана"
+            phone_display = "не указан"
+            if order.payment_details:
+                card_match = re.search(r'Карта: ([\d\s]+)', order.payment_details)
+                if card_match:
+                    card_display = card_match.group(1)
+                phone_match = re.search(r'Телефон: ([\d\s\+\(\)\-]+)', order.payment_details)
+                if phone_match:
+                    phone_display = phone_match.group(1)
+            text += (
+                f"💰 **Продает:** {format_amount(order.amount, order.crypto)} {order.crypto}\n"
+                f"💸 **Получает:** {order.rub_amount:,.2f} RUB\n"
+                f"⛽ **Комиссия сети:** {format_amount(order.fee, order.crypto)} {order.crypto}\n"
+                f"💱 **Курс:** {order.price:,.2f} RUB\n\n"
+                f"🏦 **РЕКВИЗИТЫ:**\n"
+                f"• Банк: {bank_name}\n"
+                f"• Карта: `{card_display}`\n"
+                f"• Телефон: `{phone_display}`\n"
+            )
+        
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[
             InlineKeyboardButton(text="✏️ Взять", callback_data=f"take_{order.order_id}"),
             InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{order.order_id}")
         ]])
-        await message.answer(text, reply_markup=keyboard)
+        
+        await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
 
 @dp.message(lambda message: message.from_user.id in ADMIN_IDS and admin_mode.get(message.from_user.id, True) and message.text == "📋 Активные заявки")
 async def admin_show_active_orders(message: types.Message):
@@ -775,14 +848,76 @@ async def admin_show_active_orders(message: types.Message):
     if not active:
         await message.answer("📭 Нет активных заявок")
         return
+    
     for order in sorted(active, key=lambda x: x.created_at, reverse=True):
-        status = "⏳" if order.status == 'waiting_payment' else "✅"
-        text = f"{status} Заявка #{order.order_id}\nТип: {'🟢' if order.operation == 'buy' else '🔴'}\n👤 {order.user_name}\n💰 {order.rub_amount:,.2f} RUB"
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="✅ Оплачено", callback_data=f"paid_{order.order_id}"),
-            InlineKeyboardButton(text="✅ Завершить", callback_data=f"complete_{order.order_id}")
-        ]])
-        await message.answer(text, reply_markup=keyboard)
+        status_emoji = "⏳" if order.status == 'waiting_payment' else "✅"
+        status_text = "ОЖИДАЕТ ОПЛАТЫ" if order.status == 'waiting_payment' else "ОПЛАЧЕНО"
+        emoji = "🟢" if order.operation == 'buy' else "🔴"
+        action = "ПОКУПКА" if order.operation == 'buy' else "ПРОДАЖА"
+        
+        text = (
+            f"{status_emoji} **ЗАЯВКА #{order.order_id}**\n"
+            f"**Статус:** {status_text}\n\n"
+            f"{emoji} **{action} {config.CRYPTO_SYMBOLS[order.crypto]} {order.crypto}**\n\n"
+            f"👤 **Клиент:** {order.user_name}\n"
+            f"📱 **Username:** @{order.username if order.username else 'нет'}\n"
+            f"🆔 **ID:** {order.user_id}\n"
+            f"⏱ **Время:** {order.created_at.strftime('%d.%m.%Y %H:%M')}\n\n"
+            f"💰 **ДЕТАЛИ СДЕЛКИ:**\n"
+        )
+        
+        if order.operation == 'buy':
+            wallet_address = "не указан"
+            network_type = "неизвестно"
+            if order.payment_details:
+                address_match = re.search(r'Адрес: (\S+)', order.payment_details)
+                if address_match:
+                    wallet_address = address_match.group(1)
+                network_match = re.search(r'Сеть: ([^\n]+)', order.payment_details)
+                if network_match:
+                    network_type = network_match.group(1)
+            text += (
+                f"💸 **Платит:** {order.rub_amount:,.2f} RUB\n"
+                f"💎 **Получает:** {format_amount(order.amount, order.crypto)} {order.crypto}\n"
+                f"⛽ **Комиссия сети:** {format_amount(order.fee, order.crypto)} {order.crypto}\n"
+                f"💱 **Курс:** {order.price:,.2f} RUB\n\n"
+                f"💳 **КОШЕЛЕК:**\n"
+                f"• Адрес: `{wallet_address}`\n"
+                f"• Сеть: {network_type}\n"
+            )
+        else:
+            bank_name = order.payment_method or "не указан"
+            card_display = "не указана"
+            phone_display = "не указан"
+            if order.payment_details:
+                card_match = re.search(r'Карта: ([\d\s]+)', order.payment_details)
+                if card_match:
+                    card_display = card_match.group(1)
+                phone_match = re.search(r'Телефон: ([\d\s\+\(\)\-]+)', order.payment_details)
+                if phone_match:
+                    phone_display = phone_match.group(1)
+            text += (
+                f"💰 **Продает:** {format_amount(order.amount, order.crypto)} {order.crypto}\n"
+                f"💸 **Получает:** {order.rub_amount:,.2f} RUB\n"
+                f"⛽ **Комиссия сети:** {format_amount(order.fee, order.crypto)} {order.crypto}\n"
+                f"💱 **Курс:** {order.price:,.2f} RUB\n\n"
+                f"🏦 **РЕКВИЗИТЫ:**\n"
+                f"• Банк: {bank_name}\n"
+                f"• Карта: `{card_display}`\n"
+                f"• Телефон: `{phone_display}`\n"
+            )
+        
+        # Кнопки для активных заявок
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="✅ Оплачено", callback_data=f"paid_{order.order_id}"),
+                 InlineKeyboardButton(text="💬 Написать", callback_data=f"msg_{order.order_id}")],
+                [InlineKeyboardButton(text="✅ Завершить", callback_data=f"complete_{order.order_id}"),
+                 InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{order.order_id}")]
+            ]
+        )
+        
+        await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
 
 @dp.message(lambda message: message.from_user.id in ADMIN_IDS and admin_mode.get(message.from_user.id, True) and message.text == "💰 Все курсы")
 async def admin_show_prices(message: types.Message):
