@@ -20,6 +20,7 @@
 
 Windows:
 python -m venv venv
+
 venv\Scripts\activate
 
 Linux/Mac:
@@ -27,6 +28,7 @@ python3 -m venv venv
 source venv/bin/activate
 
 
+<<<<<<< HEAD
 ШАГ 3: Установи зависимости
 ----------------------------------------------------
 pip install -r requirements.txt
@@ -113,8 +115,17 @@ pip install -r requirements.txt
 5. Ввел: python bot.py
 
 ГОТОВО!
+=======
+потом нужно создать файл .env и туда нужно вставить токен своего бота и tg id
+BOT_TOKEN=your_bot_token_here
+
+ADMIN_ID=your_telegram_id_here (21309823, 233213, 1232156)
 
 
 
 
 p.s. если есть какие то ошибки можно скинуть код бота в deepseek и он ответить на то в чем проблема и как если нужно ее пофиксить 
+=======
+
+самые главные настройки для тебя это 
+config и тексты(ищешь через ctrl+f)
