@@ -37,7 +37,7 @@ source venv/bin/activate
 <<<<<<< HEAD
 ШАГ 3: Установи зависимости
 ----------------------------------------------------
-pip install -r requirements.txt
+pip install -r req.txt
 
 
 ШАГ 4: Создай файл .env
