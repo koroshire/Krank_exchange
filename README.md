@@ -103,26 +103,11 @@ ADMIN_WELCOME_TEXT  # Приветствие для админа
 HELP_TEXT          # Текст помощи
 CONTACTS_TEXT      # Контакты
 
-Просто меняй текст между кавычками на свой.
 
 
 
-5. мини гайд
-====================================================
 
-1. Скачал Python
-2. Открыл терминал в папке с ботом
-3. Ввел по порядку:
 
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-
-4. Создал файл .env с токеном и ID
-5. Ввел: python bot.py
-
-ГОТОВО!
-=======
 потом нужно создать файл .env и туда нужно вставить токен своего бота и tg id
 BOT_TOKEN=your_bot_token_here
 
