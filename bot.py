@@ -840,7 +840,7 @@ async def admin_show_all_orders(message: types.Message):
             InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{order.order_id}")
         ]])
         
-        await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
+        await message.answer(text, reply_markup=keyboard)
 
 @dp.message(lambda message: message.from_user.id in ADMIN_IDS and admin_mode.get(message.from_user.id, True) and message.text == "📋 Активные заявки")
 async def admin_show_active_orders(message: types.Message):
@@ -917,7 +917,7 @@ async def admin_show_active_orders(message: types.Message):
             ]
         )
         
-        await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
+        await message.answer(text, reply_markup=keyboard)
 
 @dp.message(lambda message: message.from_user.id in ADMIN_IDS and admin_mode.get(message.from_user.id, True) and message.text == "💰 Все курсы")
 async def admin_show_prices(message: types.Message):
@@ -1017,7 +1017,7 @@ async def take_order(callback: CallbackQuery):
     await bot.send_message(order.user_id, f"📌 **ВАШ НОМЕР ЗАЯВКИ: #{order_id}**\n📌 **ВАШ ID: `{order.user_id}`**\nСохраните их!", parse_mode="Markdown")
     
     await callback.answer("✅ Заявка взята в работу")
-    await callback.message.edit_text(f"{callback.message.text}\n\n🟢 **В работе**", parse_mode="Markdown")
+    await callback.message.edit_text(f"{callback.message.text}\n\n🟢 В работе")
 
 @dp.callback_query(lambda c: c.data and c.data.startswith('paid_'))
 async def mark_paid(callback: CallbackQuery):
@@ -1029,7 +1029,7 @@ async def mark_paid(callback: CallbackQuery):
     await orders_db.update_status(order_id, 'paid')
     await bot.send_message(order.user_id, f"💰 По заявке #{order_id} получена оплата!\nСредства скоро будут отправлены.")
     await callback.answer("✅ Оплата отмечена")
-    await callback.message.edit_text(f"{callback.message.text}\n\n💰 **Оплачено**", parse_mode="Markdown")
+    await callback.message.edit_text(f"{callback.message.text}\n\n💰 Оплачено")
 
 @dp.callback_query(lambda c: c.data and c.data.startswith('complete_'))
 async def complete_order(callback: CallbackQuery):
@@ -1041,7 +1041,7 @@ async def complete_order(callback: CallbackQuery):
     await orders_db.update_status(order_id, 'completed')
     await bot.send_message(order.user_id, f"✅ Заявка #{order_id} завершена!\nСпасибо за использование сервиса!")
     await callback.answer("✅ Заявка завершена")
-    await callback.message.edit_text(f"{callback.message.text}\n\n✅ **Завершено**", parse_mode="Markdown")
+    await callback.message.edit_text(f"{callback.message.text}\n\n✅ Завершено")
 
 @dp.callback_query(lambda c: c.data and c.data.startswith('reject_'))
 async def reject_order_start(callback: CallbackQuery, state: FSMContext):
