@@ -1506,6 +1506,14 @@ async def help_menu(message: types.Message):
     await cmd_help(message)
 
 
+def escape_markdown(text: str) -> str:
+    """Экранирует специальные символы Markdown"""
+    special_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+    for char in special_chars:
+        text = text.replace(char, f'\\{char}')
+    return text
+
+
 # ==================== ЗАПУСК БОТА ====================
 async def main():
     logger.info("=" * 50)
